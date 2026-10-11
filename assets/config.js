@@ -15,10 +15,10 @@ const companyConfig = {
   name: "LD Instalações",
 
   // Número no formato internacional, apenas dígitos. Ex: "5513999998888"
-  whatsapp: "",
+  whatsapp: "5513988118895",
 
   // URL completa do perfil. Ex: "https://instagram.com/ldinstalacoes"
-  instagram: "",
+  instagram: "https://instagram.com/ld_instalacoes1",
 
   email: "",
   address: "",
