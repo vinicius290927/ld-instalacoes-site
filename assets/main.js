@@ -247,14 +247,14 @@ function initLightbox() {
 
 /* ---------- Quote form validation + submit ---------- */
 
+
 function initQuoteForm() {
   const form = document.getElementById("quote-form");
   if (!form) return;
 
   const status = document.getElementById("form-status");
-  const fileInput = document.getElementById("f-file");
-  const preview = document.getElementById("file-preview");
-  const dropArea = form.querySelector(".file-drop");
+
+  const telefoneEmpresa = "5513988118891";
 
   const validators = {
     name: (v) => v.trim().length >= 3 || "Informe seu nome completo.",
@@ -279,95 +279,14 @@ function initQuoteForm() {
     if (!rule) return true;
 
     const result = rule(field.value);
-
     setFieldError(field, result === true ? "" : result);
+
     return result === true;
   }
 
   form.querySelectorAll("input, select, textarea").forEach((field) => {
     field.addEventListener("blur", () => validateField(field));
   });
-
-  // Atualiza a prévia dos arquivos
-  function renderFiles() {
-    if (!fileInput || !preview) return;
-
-    preview.innerHTML = "";
-
-    Array.from(fileInput.files).forEach((file, index) => {
-      const item = document.createElement("div");
-      item.className = "file-preview-item";
-
-      if (file.type.startsWith("image/")) {
-        const img = document.createElement("img");
-        img.src = URL.createObjectURL(file);
-        img.alt = file.name;
-        item.appendChild(img);
-      } else {
-        const icon = document.createElement("span");
-        icon.textContent = "📄";
-        item.appendChild(icon);
-      }
-
-      const name = document.createElement("span");
-      name.className = "file-name";
-      name.textContent = file.name;
-      item.appendChild(name);
-
-      const remove = document.createElement("button");
-      remove.type = "button";
-      remove.textContent = "Remover";
-      remove.addEventListener("click", () => {
-        const transfer = new DataTransfer();
-
-        Array.from(fileInput.files).forEach((f, i) => {
-          if (i !== index) transfer.items.add(f);
-        });
-
-        fileInput.files = transfer.files;
-        renderFiles();
-      });
-
-      item.appendChild(remove);
-      preview.appendChild(item);
-    });
-  }
-
-  if (fileInput) {
-    fileInput.addEventListener("change", renderFiles);
-  }
-
-  // Permite arrastar e soltar arquivos
-  if (dropArea && fileInput) {
-    ["dragenter", "dragover"].forEach((eventName) => {
-      dropArea.addEventListener(eventName, (e) => {
-        e.preventDefault();
-        dropArea.classList.add("drag-active");
-      });
-    });
-
-    ["dragleave", "drop"].forEach((eventName) => {
-      dropArea.addEventListener(eventName, (e) => {
-        e.preventDefault();
-        dropArea.classList.remove("drag-active");
-      });
-    });
-
-    dropArea.addEventListener("drop", (e) => {
-      const transfer = new DataTransfer();
-
-      Array.from(fileInput.files).forEach((file) => {
-        transfer.items.add(file);
-      });
-
-      Array.from(e.dataTransfer.files).forEach((file) => {
-        transfer.items.add(file);
-      });
-
-      fileInput.files = transfer.files;
-      renderFiles();
-    });
-  }
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -377,22 +296,17 @@ function initQuoteForm() {
       return;
     }
 
-    const telefoneEmpresa = "5513988118891";
-
     const campos = Array.from(
       form.querySelectorAll("input, select, textarea")
     );
 
     const dados = campos
       .filter((campo) => {
-        if (campo.type === "file" || campo.type === "submit") return false;
+        if (["checkbox", "radio"].includes(campo.type) && !campo.checked) {
+          return false;
+        }
 
-        if (
-          ["checkbox", "radio"].includes(campo.type) &&
-          !campo.checked
-        ) return false;
-
-        return campo.name || campo.id;
+        return campo.type !== "submit" && campo.name !== "";
       })
       .map((campo) => {
         const rotulo =
@@ -406,36 +320,24 @@ function initQuoteForm() {
       })
       .filter(Boolean);
 
-    const arquivos = fileInput
-      ? Array.from(fileInput.files).map((file) => file.name)
-      : [];
-
     const mensagem = [
       "Olá! Gostaria de solicitar um orçamento para a LD Instalações.",
       "",
       ...dados,
       "",
-      arquivos.length
-        ? "Arquivos selecionados: " + arquivos.join(", ")
-        : "Nenhum arquivo anexado.",
-      "",
-      arquivos.length
-        ? "Vou anexar os arquivos selecionados nesta conversa."
-        : "",
       "Enviado pelo formulário do site."
-    ].filter(Boolean).join("\n");
+    ].join("\n");
 
     const url = `https://wa.me/${telefoneEmpresa}?text=${encodeURIComponent(mensagem)}`;
 
     if (status) {
-      status.textContent = arquivos.length
-        ? "WhatsApp aberto! Anexe as fotos selecionadas na conversa antes de enviar."
-        : "Abrindo o WhatsApp...";
+      status.textContent = "Abrindo o WhatsApp...";
     }
 
     window.open(url, "_blank", "noopener,noreferrer");
   });
 }
+
 
 
 /* ---------- Footer year ---------- */

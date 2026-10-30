@@ -676,7 +676,4 @@ footer{background:var(--navy-950); color:var(--steel-300);}
   color: #333;
 }
 
-.file-drop.drag-active {
-  border-color: #d6a52a;
-  background: #fff8e6;
-}
+
