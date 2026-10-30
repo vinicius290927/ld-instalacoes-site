@@ -282,38 +282,62 @@ function initQuoteForm() {
     field.addEventListener("blur", () => validateField(field));
   });
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    let valid = true;
-    form.querySelectorAll("input[name], select[name], textarea[name]").forEach((field) => {
-      if (validators[field.name] && !validateField(field)) valid = false;
-    });
+ 
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  
+  if (!form.checkValidity()) {
+  form.reportValidity();
+  return;
+}
 
-    status.classList.remove("show", "success", "error");
+  // Troque pelo WhatsApp comercial da empresa
+  const telefoneEmpresa = "5513988118891";
 
-    if (!valid) {
-      status.textContent = "Verifique os campos destacados antes de enviar.";
-      status.classList.add("show", "error");
-      return;
-    }
+  const campos = Array.from(
+    form.querySelectorAll("input, select, textarea")
+  );
 
-    // NOTA PARA INTEGRAÇÃO: este formulário ainda não possui backend.
-    // Substitua o bloco abaixo por uma chamada real (fetch/POST) para o
-    // endpoint da empresa (ex.: e-mail transacional, planilha, CRM ou API própria).
-    const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.textContent = "Enviando...";
+  const dados = campos
+    .filter((campo) => {
+      if (campo.type === "file" || campo.type === "submit") return false;
+      if (["checkbox", "radio"].includes(campo.type) && !campo.checked) {
+        return false;
+      }
+      return campo.name || campo.id || campo.labels?.length;
+    })
+    .map((campo) => {
+      const rotulo =
+        campo.labels?.[0]?.textContent?.trim() ||
+        campo.name ||
+        campo.id ||
+        campo.placeholder;
 
-    setTimeout(() => {
-      status.textContent =
-        "Recebemos seus dados! Para garantir uma resposta mais rápida, finalize também pelo WhatsApp.";
-      status.classList.add("show", "success");
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i data-lucide="send" width="16" height="16"></i> Solicitar Orçamento';
-      if (window.lucide) lucide.createIcons();
-      form.reset();
-    }, 700);
-  });
+      let valor = campo.value.trim();
+
+      if (campo.type === "file" && campo.files?.length) {
+        valor = Array.from(campo.files)
+          .map((arquivo) => arquivo.name)
+          .join(", ");
+      }
+
+      return valor ? `${rotulo}: ${valor}` : "";
+    })
+    .filter(Boolean);
+
+  const mensagem = [
+    "Olá! Gostaria de solicitar um orçamento para a LD Instalações.",
+    "",
+    ...dados,
+    "",
+    "Enviado pelo formulário do site."
+  ].join("\n");
+
+  const url = `https://wa.me/${telefoneEmpresa}?text=${encodeURIComponent(mensagem)}`;
+
+  window.open(url, "_blank", "noopener,noreferrer");
+});
+
 }
 
 /* ---------- Footer year ---------- */
