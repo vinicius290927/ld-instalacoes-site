@@ -634,3 +634,49 @@ footer{background:var(--navy-950); color:var(--steel-300);}
 .skip-link:focus{top:12px;}
 
 :focus-visible{outline:3px solid var(--gold-400); outline-offset:2px;}
+
+
+
+.file-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.file-preview-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+  min-width: 0;
+}
+
+.file-preview-item img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.file-name {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.file-preview-item button {
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  padding: 7px;
+  background: #eee;
+  color: #333;
+}
+
+.file-drop.drag-active {
+  border-color: #d6a52a;
+  background: #fff8e6;
+}

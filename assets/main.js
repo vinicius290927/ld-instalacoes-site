@@ -246,22 +246,30 @@ function initLightbox() {
 }
 
 /* ---------- Quote form validation + submit ---------- */
+
 function initQuoteForm() {
   const form = document.getElementById("quote-form");
   if (!form) return;
+
   const status = document.getElementById("form-status");
+  const fileInput = document.getElementById("f-file");
+  const preview = document.getElementById("file-preview");
+  const dropArea = form.querySelector(".file-drop");
 
   const validators = {
     name: (v) => v.trim().length >= 3 || "Informe seu nome completo.",
     whatsapp: (v) => /^[\d\s()+-]{8,}$/.test(v.trim()) || "Informe um WhatsApp válido.",
     city: (v) => v.trim().length >= 2 || "Informe sua cidade.",
     serviceType: (v) => v.trim().length > 0 || "Selecione o tipo de serviço.",
-    description: (v) => v.trim().length >= 10 || "Descreva um pouco mais o seu projeto.",
+    description: (v) => v.trim().length >= 10 || "Descreva um pouco mais seu projeto.",
   };
 
   function setFieldError(field, message) {
     const wrap = field.closest(".field");
+    if (!wrap) return;
+
     wrap.classList.toggle("error", Boolean(message));
+
     const err = wrap.querySelector(".field-error");
     if (err) err.textContent = message || "";
   }
@@ -269,76 +277,166 @@ function initQuoteForm() {
   function validateField(field) {
     const rule = validators[field.name];
     if (!rule) return true;
+
     const result = rule(field.value);
-    if (result === true) {
-      setFieldError(field, "");
-      return true;
-    }
-    setFieldError(field, result);
-    return false;
+
+    setFieldError(field, result === true ? "" : result);
+    return result === true;
   }
 
   form.querySelectorAll("input, select, textarea").forEach((field) => {
     field.addEventListener("blur", () => validateField(field));
   });
 
- 
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-  
-  if (!form.checkValidity()) {
-  form.reportValidity();
-  return;
-}
+  // Atualiza a prévia dos arquivos
+  function renderFiles() {
+    if (!fileInput || !preview) return;
 
-  // Troque pelo WhatsApp comercial da empresa
-  const telefoneEmpresa = "5513988118891";
+    preview.innerHTML = "";
 
-  const campos = Array.from(
-    form.querySelectorAll("input, select, textarea")
-  );
+    Array.from(fileInput.files).forEach((file, index) => {
+      const item = document.createElement("div");
+      item.className = "file-preview-item";
 
-  const dados = campos
-    .filter((campo) => {
-      if (campo.type === "file" || campo.type === "submit") return false;
-      if (["checkbox", "radio"].includes(campo.type) && !campo.checked) {
-        return false;
-      }
-      return campo.name || campo.id || campo.labels?.length;
-    })
-    .map((campo) => {
-      const rotulo =
-        campo.labels?.[0]?.textContent?.trim() ||
-        campo.name ||
-        campo.id ||
-        campo.placeholder;
-
-      let valor = campo.value.trim();
-
-      if (campo.type === "file" && campo.files?.length) {
-        valor = Array.from(campo.files)
-          .map((arquivo) => arquivo.name)
-          .join(", ");
+      if (file.type.startsWith("image/")) {
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(file);
+        img.alt = file.name;
+        item.appendChild(img);
+      } else {
+        const icon = document.createElement("span");
+        icon.textContent = "📄";
+        item.appendChild(icon);
       }
 
-      return valor ? `${rotulo}: ${valor}` : "";
-    })
-    .filter(Boolean);
+      const name = document.createElement("span");
+      name.className = "file-name";
+      name.textContent = file.name;
+      item.appendChild(name);
 
-  const mensagem = [
-    "Olá! Gostaria de solicitar um orçamento para a LD Instalações.",
-    "",
-    ...dados,
-    "",
-    "Enviado pelo formulário do site."
-  ].join("\n");
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.textContent = "Remover";
+      remove.addEventListener("click", () => {
+        const transfer = new DataTransfer();
 
-  const url = `https://wa.me/${telefoneEmpresa}?text=${encodeURIComponent(mensagem)}`;
+        Array.from(fileInput.files).forEach((f, i) => {
+          if (i !== index) transfer.items.add(f);
+        });
 
-  window.open(url, "_blank", "noopener,noreferrer");
-});
+        fileInput.files = transfer.files;
+        renderFiles();
+      });
 
+      item.appendChild(remove);
+      preview.appendChild(item);
+    });
+  }
+
+  if (fileInput) {
+    fileInput.addEventListener("change", renderFiles);
+  }
+
+  // Permite arrastar e soltar arquivos
+  if (dropArea && fileInput) {
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropArea.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropArea.classList.add("drag-active");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((eventName) => {
+      dropArea.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropArea.classList.remove("drag-active");
+      });
+    });
+
+    dropArea.addEventListener("drop", (e) => {
+      const transfer = new DataTransfer();
+
+      Array.from(fileInput.files).forEach((file) => {
+        transfer.items.add(file);
+      });
+
+      Array.from(e.dataTransfer.files).forEach((file) => {
+        transfer.items.add(file);
+      });
+
+      fileInput.files = transfer.files;
+      renderFiles();
+    });
+  }
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    const telefoneEmpresa = "5513988118891";
+
+    const campos = Array.from(
+      form.querySelectorAll("input, select, textarea")
+    );
+
+    const dados = campos
+      .filter((campo) => {
+        if (campo.type === "file" || campo.type === "submit") return false;
+
+        if (
+          ["checkbox", "radio"].includes(campo.type) &&
+          !campo.checked
+        ) return false;
+
+        return campo.name || campo.id;
+      })
+      .map((campo) => {
+        const rotulo =
+          campo.labels?.[0]?.textContent?.trim() ||
+          campo.name ||
+          campo.id;
+
+        const valor = campo.value.trim();
+
+        return valor ? `${rotulo}: ${valor}` : "";
+      })
+      .filter(Boolean);
+
+    const arquivos = fileInput
+      ? Array.from(fileInput.files).map((file) => file.name)
+      : [];
+
+    const mensagem = [
+      "Olá! Gostaria de solicitar um orçamento para a LD Instalações.",
+      "",
+      ...dados,
+      "",
+      arquivos.length
+        ? "Arquivos selecionados: " + arquivos.join(", ")
+        : "Nenhum arquivo anexado.",
+      "",
+      arquivos.length
+        ? "Vou anexar os arquivos selecionados nesta conversa."
+        : "",
+      "Enviado pelo formulário do site."
+    ].filter(Boolean).join("\n");
+
+    const url = `https://wa.me/${telefoneEmpresa}?text=${encodeURIComponent(mensagem)}`;
+
+    if (status) {
+      status.textContent = arquivos.length
+        ? "WhatsApp aberto! Anexe as fotos selecionadas na conversa antes de enviar."
+        : "Abrindo o WhatsApp...";
+    }
+
+    window.open(url, "_blank", "noopener,noreferrer");
+  });
 }
+
 
 /* ---------- Footer year ---------- */
 function initFooterYear() {
